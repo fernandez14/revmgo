@@ -12,6 +12,7 @@ var (
 	Session *mgo.Session // Global mgo Session
 	Dial    string       // http://godoc.org/labix.org/v2/mgo#Dial
 	Method  string       // clone, copy, new http://godoc.org/labix.org/v2/mgo#Session.New
+	DatabaseName string  // Holds the dbname
 	// Holds a the function to call for a given Method
 	mgoSessionDupl func() *mgo.Session
 )
@@ -38,6 +39,7 @@ func AppInit() {
 	// Read configuration.
 	Dial = revel.Config.StringDefault("revmgo.dial", "localhost")
 	Method = revel.Config.StringDefault("revmgo.method", "clone")
+	DatabaseName = revel.Config.StringDefault("revmgo.dbname", "admin")
 	if err = MethodError(Method); err != nil {
 		revel.ERROR.Panic(err)
 	}
@@ -67,6 +69,7 @@ func ControllerInit() {
 type MongoController struct {
 	*revel.Controller
 	MongoSession *mgo.Session // named MongoSession to avoid collision with revel.Session
+	Database *mgo.Database
 }
 
 // Connect to mgo if we haven't already and return a copy/new/clone of the session
@@ -86,6 +89,7 @@ func (c *MongoController) Begin() revel.Result {
 	}
 	// Calls Clone(), Copy() or New() depending on the configuration
 	c.MongoSession = mgoSessionDupl()
+	c.Database = c.MongoSession.DB(DatabaseName)
 	return nil
 }
 
